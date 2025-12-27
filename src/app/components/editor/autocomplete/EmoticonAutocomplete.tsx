@@ -9,18 +9,19 @@ import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { UseAsyncSearchOptions, useAsyncSearch } from '../../../hooks/useAsyncSearch';
 import { onTabPress } from '../../../utils/keyboard';
 import { createEmoticonElement, moveCursor, replaceWithElement } from '../utils';
-import { useRecentEmoji } from '../../../hooks/useRecentEmoji';
 import { useRelevantImagePacks } from '../../../hooks/useImagePacks';
-import { IEmoji, emojis } from '../../../plugins/emoji';
+
 import { useKeyDown } from '../../../hooks/useKeyDown';
 import { mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { ImageUsage, PackImageReader } from '../../../plugins/custom-emoji';
 import { getEmoticonSearchStr } from '../../../plugins/utils';
+import { useSetting } from '../../../state/hooks/settings';
+import { settingsAtom } from '../../../state/settings';
 
 type EmoticonCompleteHandler = (key: string, shortcode: string) => void;
 
-type EmoticonSearchItem = PackImageReader | IEmoji;
+type EmoticonSearchItem = PackImageReader;
 
 type EmoticonAutocompleteProps = {
   imagePackRooms: Room[];
@@ -43,15 +44,14 @@ export function EmoticonAutocomplete({
 }: EmoticonAutocompleteProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
+  const [emoteAutocompleteAmount] = useSetting(settingsAtom, 'emoteAutocompleteAmount');
 
   const imagePacks = useRelevantImagePacks(ImageUsage.Emoticon, imagePackRooms);
-  const recentEmoji = useRecentEmoji(mx, 20);
 
   const searchList = useMemo(() => {
     const list: Array<EmoticonSearchItem> = [];
     return list.concat(
-      imagePacks.flatMap((pack) => pack.getImages(ImageUsage.Emoticon)),
-      emojis
+      imagePacks.flatMap((pack) => pack.getImages(ImageUsage.Emoticon))
     );
   }, [imagePacks]);
 
@@ -60,7 +60,9 @@ export function EmoticonAutocomplete({
     getEmoticonSearchStr,
     SEARCH_OPTIONS
   );
-  const autoCompleteEmoticon = result ? result.items.slice(0, 20) : recentEmoji;
+  const autoCompleteEmoticon = result
+    ? result.items.slice(0, emoteAutocompleteAmount)
+    : searchList.slice(0, emoteAutocompleteAmount);
 
   useEffect(() => {
     if (query.text) search(query.text);
@@ -84,8 +86,8 @@ export function EmoticonAutocomplete({
   });
 
   return autoCompleteEmoticon.length === 0 ? null : (
-    <AutocompleteMenu headerContent={<Text size="L400">Emojis</Text>} requestClose={requestClose}>
-      {autoCompleteEmoticon.map((emoticon) => {
+    <AutocompleteMenu headerContent={<Text size="L400">Emotes</Text>} requestClose={requestClose}>
+      {autoCompleteEmoticon.map((emoticon: EmoticonSearchItem) => {
         const isCustomEmoji = 'url' in emoticon;
         const key = isCustomEmoji ? emoticon.url : emoticon.unicode;
         const customEmojiUrl = mxcUrlToHttp(mx, key, useAuthentication);
