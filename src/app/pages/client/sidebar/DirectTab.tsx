@@ -2,7 +2,7 @@ import React, { MouseEventHandler, forwardRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Icon, Icons, Menu, MenuItem, PopOut, RectCords, Text, config, toRem } from 'folds';
 import FocusTrap from 'focus-trap-react';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { useDirects } from '../../../state/hooks/roomList';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { mDirectAtom } from '../../../state/mDirectList';
@@ -20,6 +20,7 @@ import { useDirectSelected } from '../../../hooks/router/useDirectSelected';
 import { UnreadBadge } from '../../../components/unread-badge';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { useNavToActivePathAtom } from '../../../state/hooks/navToActivePath';
+import { useCollapsedSidebarSectionsAtom } from '../../../state/hooks/collapsedSidebarSections';
 import { useDirectRooms } from '../direct/useDirectRooms';
 import { markAsRead } from '../../../utils/notifications';
 import { stopPropagation } from '../../../utils/keyboard';
@@ -65,6 +66,7 @@ export function DirectTab() {
   const mx = useMatrixClient();
   const screenSize = useScreenSizeContext();
   const navToActivePath = useAtomValue(useNavToActivePathAtom());
+  const [collapsedSections, setCollapsedSections] = useAtom(useCollapsedSidebarSectionsAtom());
 
   const mDirects = useAtomValue(mDirectAtom);
   const directs = useDirects(mx, allRoomsAtom, mDirects);
@@ -74,8 +76,25 @@ export function DirectTab() {
   const directSelected = useDirectSelected();
 
   const handleDirectClick = () => {
+    // On mobile, just navigate
+    if (screenSize === ScreenSize.Mobile) {
+      navigate(getDirectPath());
+      return;
+    }
+
+    // On desktop, if already selected, toggle collapse
+    if (directSelected) {
+      setCollapsedSections({ type: 'TOGGLE', sectionId: 'direct' });
+      return;
+    }
+
+    // If not selected, expand (if collapsed) and navigate
+    if (collapsedSections.has('direct')) {
+      setCollapsedSections({ type: 'DELETE', sectionId: 'direct' });
+    }
+
     const activePath = navToActivePath.get('direct');
-    if (activePath && screenSize !== ScreenSize.Mobile) {
+    if (activePath) {
       navigate(joinPathComponent(activePath));
       return;
     }

@@ -8,6 +8,8 @@ import { makeNavToActivePathAtom } from '../../state/navToActivePath';
 import { NavToActivePathProvider } from '../../state/hooks/navToActivePath';
 import { makeOpenedSidebarFolderAtom } from '../../state/openedSidebarFolder';
 import { OpenedSidebarFolderProvider } from '../../state/hooks/openedSidebarFolder';
+import { makeCollapsedSidebarSectionsAtom } from '../../state/collapsedSidebarSections';
+import { CollapsedSidebarSectionsProvider } from '../../state/hooks/collapsedSidebarSections';
 
 type ClientInitStorageAtomProps = {
   children: ReactNode;
@@ -24,12 +26,19 @@ export function ClientInitStorageAtom({ children }: ClientInitStorageAtomProps) 
 
   const openedSidebarFolderAtom = useMemo(() => makeOpenedSidebarFolderAtom(userId), [userId]);
 
+  const collapsedSidebarSectionsAtom = useMemo(
+    () => makeCollapsedSidebarSectionsAtom(userId),
+    [userId]
+  );
+
   return (
     <ClosedNavCategoriesProvider value={closedNavCategoriesAtom}>
       <ClosedLobbyCategoriesProvider value={closedLobbyCategoriesAtom}>
         <NavToActivePathProvider value={navToActivePathAtom}>
           <OpenedSidebarFolderProvider value={openedSidebarFolderAtom}>
-            {children}
+            <CollapsedSidebarSectionsProvider value={collapsedSidebarSectionsAtom}>
+              {children}
+            </CollapsedSidebarSectionsProvider>
           </OpenedSidebarFolderProvider>
         </NavToActivePathProvider>
       </ClosedLobbyCategoriesProvider>
