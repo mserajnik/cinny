@@ -60,7 +60,7 @@ export function EmoticonAutocomplete({
     getEmoticonSearchStr,
     SEARCH_OPTIONS
   );
-  const autoCompleteEmoticon = result ? result.items.slice(0, 20) : recentEmoji;
+  const autoCompleteEmoticon = result ? result.items.slice(0, 250) : recentEmoji;
 
   useEffect(() => {
     if (query.text) search(query.text);
