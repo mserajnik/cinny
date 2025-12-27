@@ -498,6 +498,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
   atBottomRef.current = atBottom;
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const timelineContentRef = useRef<HTMLDivElement>(null);
   const scrollToBottomRef = useRef({
     count: 0,
     smooth: true,
@@ -704,6 +705,31 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       };
     }, [getScrollElement, roomInputRef]),
     useCallback(() => roomInputRef.current, [roomInputRef])
+  );
+
+  // Stay at bottom when timeline content resizes (e.g. images/emotes load)
+  useResizeObserver(
+    useMemo(() => {
+      let mounted = false;
+      return (entries) => {
+        if (!mounted) {
+          // skip initial mounting call
+          mounted = true;
+          return;
+        }
+        if (!timelineContentRef.current) return;
+        const contentEntry = getResizeObserverEntry(timelineContentRef.current, entries);
+        const scrollElement = getScrollElement();
+        if (!contentEntry || !scrollElement) return;
+
+        // Only scroll to bottom if user is at bottom
+        // This ensures images/emotes loading don't disrupt reading
+        if (atBottomRef.current) {
+          scrollToBottom(scrollElement);
+        }
+      };
+    }, [getScrollElement]),
+    useCallback(() => timelineContentRef.current, [])
   );
 
   const tryAutoMarkAsRead = useCallback(() => {
@@ -1741,6 +1767,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       )}
       <Scroll ref={scrollRef} visibility="Hover">
         <Box
+          ref={timelineContentRef}
           direction="Column"
           justifyContent="End"
           style={{ minHeight: '100%', padding: `${config.space.S600} 0` }}
