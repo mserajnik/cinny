@@ -205,7 +205,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const openProfileUserId = useUserRoomProfileState()?.userId;
 
   const membershipFilterMenu = useMembershipFilterMenu();
-  const sortFilterMenu = useMemberSortMenu();
+  const sortFilterMenu = useMemberSortMenu(mx);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
 
@@ -309,6 +309,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                       offset={4}
                       content={
                         <MemberSortMenu
+                          mx={mx}
                           selected={sortFilterIndex}
                           onSelect={setSortFilterIndex}
                           requestClose={() => setAnchor(undefined)}

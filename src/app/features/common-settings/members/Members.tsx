@@ -92,7 +92,7 @@ export function Members({ requestClose }: MembersProps) {
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const membershipFilter = useMembershipFilter(membershipFilterIndex, useMembershipFilterMenu());
-  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu());
+  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu(mx));
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -247,6 +247,7 @@ export function Members({ requestClose }: MembersProps) {
                       offset={4}
                       content={
                         <MemberSortMenu
+                          mx={mx}
                           selected={sortFilterIndex}
                           onSelect={setSortFilterIndex}
                           requestClose={() => setAnchor(undefined)}

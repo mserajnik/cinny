@@ -1,6 +1,7 @@
 import FocusTrap from 'focus-trap-react';
 import React from 'react';
 import { config, Menu, MenuItem, Text } from 'folds';
+import { MatrixClient } from 'matrix-js-sdk';
 import { stopPropagation } from '../utils/keyboard';
 import { useMemberSortMenu } from '../hooks/useMemberSort';
 
@@ -8,9 +9,10 @@ type MemberSortMenuProps = {
   requestClose: () => void;
   selected: number;
   onSelect: (index: number) => void;
+  mx: MatrixClient;
 };
-export function MemberSortMenu({ selected, onSelect, requestClose }: MemberSortMenuProps) {
-  const memberSortMenu = useMemberSortMenu();
+export function MemberSortMenu({ selected, onSelect, requestClose, mx }: MemberSortMenuProps) {
+  const memberSortMenu = useMemberSortMenu(mx);
 
   return (
     <FocusTrap
