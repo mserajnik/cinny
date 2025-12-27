@@ -1,7 +1,7 @@
 import React, { MouseEventHandler, forwardRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Icon, Icons, Menu, MenuItem, PopOut, RectCords, Text, config, toRem } from 'folds';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import FocusTrap from 'focus-trap-react';
 import { useOrphanRooms } from '../../../state/hooks/roomList';
 import { useMatrixClient } from '../../../hooks/useMatrixClient';
@@ -21,6 +21,7 @@ import { useHomeSelected } from '../../../hooks/router/useHomeSelected';
 import { UnreadBadge } from '../../../components/unread-badge';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { useNavToActivePathAtom } from '../../../state/hooks/navToActivePath';
+import { useCollapsedSidebarSectionsAtom } from '../../../state/hooks/collapsedSidebarSections';
 import { useHomeRooms } from '../home/useHomeRooms';
 import { markAsRead } from '../../../utils/notifications';
 import { stopPropagation } from '../../../utils/keyboard';
@@ -66,6 +67,7 @@ export function HomeTab() {
   const mx = useMatrixClient();
   const screenSize = useScreenSizeContext();
   const navToActivePath = useAtomValue(useNavToActivePathAtom());
+  const [collapsedSections, setCollapsedSections] = useAtom(useCollapsedSidebarSectionsAtom());
 
   const mDirects = useAtomValue(mDirectAtom);
   const roomToParents = useAtomValue(roomToParentsAtom);
@@ -75,8 +77,25 @@ export function HomeTab() {
   const [menuAnchor, setMenuAnchor] = useState<RectCords>();
 
   const handleHomeClick = () => {
+    // On mobile, just navigate
+    if (screenSize === ScreenSize.Mobile) {
+      navigate(getHomePath());
+      return;
+    }
+
+    // On desktop, if already selected, toggle collapse
+    if (homeSelected) {
+      setCollapsedSections({ type: 'TOGGLE', sectionId: 'home' });
+      return;
+    }
+
+    // If not selected, expand (if collapsed) and navigate
+    if (collapsedSections.has('home')) {
+      setCollapsedSections({ type: 'DELETE', sectionId: 'home' });
+    }
+
     const activePath = navToActivePath.get('home');
-    if (activePath && screenSize !== ScreenSize.Mobile) {
+    if (activePath) {
       navigate(joinPathComponent(activePath));
       return;
     }

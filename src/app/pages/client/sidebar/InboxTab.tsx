@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, Icons } from 'folds';
-import { useAtomValue } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import {
   SidebarAvatar,
   SidebarItem,
@@ -19,20 +19,35 @@ import { useInboxSelected } from '../../../hooks/router/useInbox';
 import { UnreadBadge } from '../../../components/unread-badge';
 import { ScreenSize, useScreenSizeContext } from '../../../hooks/useScreenSize';
 import { useNavToActivePathAtom } from '../../../state/hooks/navToActivePath';
+import { useCollapsedSidebarSectionsAtom } from '../../../state/hooks/collapsedSidebarSections';
 
 export function InboxTab() {
   const screenSize = useScreenSizeContext();
   const navigate = useNavigate();
   const navToActivePath = useAtomValue(useNavToActivePathAtom());
+  const [collapsedSections, setCollapsedSections] = useAtom(useCollapsedSidebarSectionsAtom());
   const inboxSelected = useInboxSelected();
   const allInvites = useAtomValue(allInvitesAtom);
   const inviteCount = allInvites.length;
 
   const handleInboxClick = () => {
+    // On mobile, just navigate
     if (screenSize === ScreenSize.Mobile) {
       navigate(getInboxPath());
       return;
     }
+
+    // On desktop, if already selected, toggle collapse
+    if (inboxSelected) {
+      setCollapsedSections({ type: 'TOGGLE', sectionId: 'inbox' });
+      return;
+    }
+
+    // If not selected, expand (if collapsed) and navigate
+    if (collapsedSections.has('inbox')) {
+      setCollapsedSections({ type: 'DELETE', sectionId: 'inbox' });
+    }
+
     const activePath = navToActivePath.get('inbox');
     if (activePath) {
       navigate(joinPathComponent(activePath));
