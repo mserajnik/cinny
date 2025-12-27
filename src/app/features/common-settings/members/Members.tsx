@@ -42,6 +42,7 @@ import {
 import { getMemberSearchStr } from '../../../utils/room';
 import { useMembershipFilter, useMembershipFilterMenu } from '../../../hooks/useMemberFilter';
 import { useMemberPowerSort, useMemberSort, useMemberSortMenu } from '../../../hooks/useMemberSort';
+import { useMemberPresenceMap } from '../../../hooks/useMemberPresenceMap';
 import { settingsAtom } from '../../../state/settings';
 import { useSetting } from '../../../state/hooks/settings';
 import { UseStateProvider } from '../../../components/UseStateProvider';
@@ -91,8 +92,11 @@ export function Members({ requestClose }: MembersProps) {
 
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
+
+  const presenceMap = useMemberPresenceMap(mx, members);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, useMembershipFilterMenu());
-  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu());
+  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu(), presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const scrollRef = useRef<HTMLDivElement>(null);
