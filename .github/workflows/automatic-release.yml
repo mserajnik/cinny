@@ -1,0 +1,56 @@
+name: Automatic release
+
+on:
+  push:
+    branches:
+      - customizations
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Create tarball of dist directory
+        run: |
+          tar -czf dist.tar.gz dist/
+
+      - name: Generate release info
+        id: release_info
+        run: |
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          COMMIT_SHORT=$(git rev-parse --short HEAD)
+          COMMIT_MSG=$(git log -1 --pretty=%B | head -n 1)
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "tag=release-$TIMESTAMP-$COMMIT_SHORT" >> $GITHUB_OUTPUT
+          echo "name=Release $TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "commit_short=$COMMIT_SHORT" >> $GITHUB_OUTPUT
+          echo "commit_msg=$COMMIT_MSG" >> $GITHUB_OUTPUT
+
+      - name: Create automatic release
+        uses: crowbarmaster/GH-Automatic-Releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: ${{ steps.release_info.outputs.tag }}
+          prerelease: false
+          title: ${{ steps.release_info.outputs.name }}
+          files: |
+            dist.tar.gz
