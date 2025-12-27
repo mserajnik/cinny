@@ -39,6 +39,7 @@ export interface Settings {
   encUrlPreview: boolean;
   showHiddenEvents: boolean;
   legacyUsernameColor: boolean;
+  emoteAutocompleteAmount: number;
 
   showNotifications: boolean;
   isNotificationSounds: boolean;
@@ -73,6 +74,7 @@ const defaultSettings: Settings = {
   encUrlPreview: false,
   showHiddenEvents: false,
   legacyUsernameColor: false,
+  emoteAutocompleteAmount: 25,
 
   showNotifications: true,
   isNotificationSounds: true,
