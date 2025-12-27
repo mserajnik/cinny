@@ -11,7 +11,7 @@ import { onTabPress } from '../../../utils/keyboard';
 import { createEmoticonElement, moveCursor, replaceWithElement } from '../utils';
 import { useRecentEmoji } from '../../../hooks/useRecentEmoji';
 import { useRelevantImagePacks } from '../../../hooks/useImagePacks';
-import { IEmoji, emojis } from '../../../plugins/emoji';
+import { IEmoji } from '../../../plugins/emoji';
 import { useKeyDown } from '../../../hooks/useKeyDown';
 import { mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
@@ -50,8 +50,7 @@ export function EmoticonAutocomplete({
   const searchList = useMemo(() => {
     const list: Array<EmoticonSearchItem> = [];
     return list.concat(
-      imagePacks.flatMap((pack) => pack.getImages(ImageUsage.Emoticon)),
-      emojis
+      imagePacks.flatMap((pack) => pack.getImages(ImageUsage.Emoticon))
     );
   }, [imagePacks]);
 
