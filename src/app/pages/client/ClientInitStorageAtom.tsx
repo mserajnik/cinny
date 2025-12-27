@@ -10,6 +10,8 @@ import { makeOpenedSidebarFolderAtom } from '../../state/openedSidebarFolder';
 import { OpenedSidebarFolderProvider } from '../../state/hooks/openedSidebarFolder';
 import { makeCallPreferencesAtom } from '../../state/callPreferences';
 import { CallPreferencesProvider } from '../../state/hooks/callPreferences';
+import { makeCollapsedSidebarSectionsAtom } from '../../state/collapsedSidebarSections';
+import { CollapsedSidebarSectionsProvider } from '../../state/hooks/collapsedSidebarSections';
 
 type ClientInitStorageAtomProps = {
   children: ReactNode;
@@ -28,6 +30,11 @@ export function ClientInitStorageAtom({ children }: ClientInitStorageAtomProps) 
 
   const callPreferencesAtom = useMemo(() => makeCallPreferencesAtom(userId), [userId]);
 
+  const collapsedSidebarSectionsAtom = useMemo(
+    () => makeCollapsedSidebarSectionsAtom(userId),
+    [userId]
+  );
+
   return (
     <ClosedNavCategoriesProvider value={closedNavCategoriesAtom}>
       <ClosedLobbyCategoriesProvider value={closedLobbyCategoriesAtom}>
@@ -36,6 +43,9 @@ export function ClientInitStorageAtom({ children }: ClientInitStorageAtomProps) 
             <CallPreferencesProvider value={callPreferencesAtom}>
               {children}
             </CallPreferencesProvider>
+            <CollapsedSidebarSectionsProvider value={collapsedSidebarSectionsAtom}>
+              {children}
+            </CollapsedSidebarSectionsProvider>
           </OpenedSidebarFolderProvider>
         </NavToActivePathProvider>
       </ClosedLobbyCategoriesProvider>
