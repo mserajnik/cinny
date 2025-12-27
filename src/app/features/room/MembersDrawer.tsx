@@ -61,6 +61,7 @@ import { useSpaceOptionally } from '../../hooks/useSpace';
 import { ContainerColor } from '../../styles/ContainerColor.css';
 import { useFlattenPowerTagMembers, useGetMemberPowerTag } from '../../hooks/useMemberPowerTag';
 import { useRoomCreators } from '../../hooks/useRoomCreators';
+import { useMemberPresenceMap } from '../../hooks/useMemberPresenceMap';
 
 type MemberDrawerHeaderProps = {
   room: Room;
@@ -209,8 +210,10 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
 
+  const presenceMap = useMemberPresenceMap(mx, members);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);
-  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu);
+  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu, presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const typingMembers = useRoomTypingMember(room.roomId);
