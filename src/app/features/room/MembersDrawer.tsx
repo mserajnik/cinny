@@ -209,8 +209,20 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
 
+  // Build presence map for sorting
+  const presenceMap = useMemo(() => {
+    const map = new Map();
+    members.forEach(member => {
+      const user = mx.getUser(member.userId);
+      if (user?.presence) {
+        map.set(member.userId, user.presence);
+      }
+    });
+    return map;
+  }, [members, mx]);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);
-  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu);
+  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu, presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const typingMembers = useRoomTypingMember(room.roomId);

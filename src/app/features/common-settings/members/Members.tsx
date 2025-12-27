@@ -91,8 +91,21 @@ export function Members({ requestClose }: MembersProps) {
 
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
+
+  // Build presence map for sorting
+  const presenceMap = useMemo(() => {
+    const map = new Map();
+    members.forEach(member => {
+      const user = mx.getUser(member.userId);
+      if (user?.presence) {
+        map.set(member.userId, user.presence);
+      }
+    });
+    return map;
+  }, [members, mx]);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, useMembershipFilterMenu());
-  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu());
+  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu(), presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const scrollRef = useRef<HTMLDivElement>(null);

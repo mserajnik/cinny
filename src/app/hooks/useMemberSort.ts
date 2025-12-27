@@ -1,5 +1,12 @@
 import { RoomMember } from 'matrix-js-sdk';
 import { useCallback, useMemo } from 'react';
+import { Presence } from './useUserPresence';
+
+const presencePriority: Record<Presence, number> = {
+  [Presence.Online]: 0,
+  [Presence.Unavailable]: 1,
+  [Presence.Offline]: 2,
+};
 
 export const MemberSort = {
   Ascending: (a: RoomMember, b: RoomMember) =>
@@ -10,6 +17,21 @@ export const MemberSort = {
     (b.events.member?.getTs() ?? 0) - (a.events.member?.getTs() ?? 0),
   Oldest: (a: RoomMember, b: RoomMember) =>
     (a.events.member?.getTs() ?? 0) - (b.events.member?.getTs() ?? 0),
+  PresenceFirst: (presenceMap: Map<string, Presence>) => (a: RoomMember, b: RoomMember) => {
+    const presenceA = presenceMap.get(a.userId) ?? Presence.Offline;
+    const presenceB = presenceMap.get(b.userId) ?? Presence.Offline;
+
+    const priorityA = presencePriority[presenceA] ?? 2;
+    const priorityB = presencePriority[presenceB] ?? 2;
+
+    // Primary sort by presence
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // Secondary sort alphabetically
+    return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+  },
 };
 
 export type MemberSortFn = (a: RoomMember, b: RoomMember) => number;
@@ -31,6 +53,10 @@ export const useMemberSortMenu = (): MemberSortItem[] =>
         sortFn: MemberSort.Descending,
       },
       {
+        name: 'Presence',
+        sortFn: MemberSort.Ascending, // Placeholder, actual function created in useMemberSort
+      },
+      {
         name: 'Newest',
         sortFn: MemberSort.NewestFirst,
       },
@@ -42,8 +68,21 @@ export const useMemberSortMenu = (): MemberSortItem[] =>
     []
   );
 
-export const useMemberSort = (index: number, memberSort: MemberSortItem[]): MemberSortItem => {
+export const useMemberSort = (
+  index: number,
+  memberSort: MemberSortItem[],
+  presenceMap?: Map<string, Presence>
+): MemberSortItem => {
   const item = memberSort[index] ?? memberSort[0];
+
+  // If this is the Presence sort option and we have a presence map, use it
+  if (item.name === 'Presence' && presenceMap) {
+    return {
+      name: item.name,
+      sortFn: MemberSort.PresenceFirst(presenceMap),
+    };
+  }
+
   return item;
 };
 
