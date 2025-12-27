@@ -33,6 +33,8 @@ import classNames from 'classnames';
 import * as css from './MembersDrawer.css';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { UseStateProvider } from '../../components/UseStateProvider';
+import type { UserPresence } from '../../hooks/useUserPresence';
+import { AvatarPresence, PresenceBadge } from '../../components/presence';
 import {
   SearchItemStrGetter,
   UseAsyncSearchOptions,
@@ -59,6 +61,7 @@ import { useSpaceOptionally } from '../../hooks/useSpace';
 import { ContainerColor } from '../../styles/ContainerColor.css';
 import { useFlattenPowerTagMembers, useGetMemberPowerTag } from '../../hooks/useMemberPowerTag';
 import { useRoomCreators } from '../../hooks/useRoomCreators';
+import { useMemberPresenceMap } from '../../hooks/useMemberPresenceMap';
 
 type MemberDrawerHeaderProps = {
   room: Room;
@@ -109,6 +112,7 @@ type MemberItemProps = {
   onClick: MouseEventHandler<HTMLButtonElement>;
   pressed?: boolean;
   typing?: boolean;
+  presence?: UserPresence;
 };
 function MemberItem({
   mx,
@@ -118,6 +122,7 @@ function MemberItem({
   onClick,
   pressed,
   typing,
+  presence,
 }: MemberItemProps) {
   const name =
     getMemberDisplayName(room, member.userId) ?? getMxIdLocalPart(member.userId) ?? member.userId;
@@ -135,14 +140,22 @@ function MemberItem({
       radii="400"
       onClick={onClick}
       before={
-        <Avatar size="200">
-          <UserAvatar
-            userId={member.userId}
-            src={avatarUrl ?? undefined}
-            alt={name}
-            renderFallback={() => <Icon size="50" src={Icons.User} filled />}
-          />
-        </Avatar>
+        <AvatarPresence
+          badge={
+            presence && presence.lastActiveTs !== 0 ? (
+              <PresenceBadge size="200" presence={presence.presence} status={presence.status} />
+            ) : undefined
+          }
+        >
+          <Avatar size="200">
+            <UserAvatar
+              userId={member.userId}
+              src={avatarUrl ?? undefined}
+              alt={name}
+              renderFallback={() => <Icon size="50" src={Icons.User} filled />}
+            />
+          </Avatar>
+        </AvatarPresence>
       }
       after={
         typing && (
@@ -197,8 +210,10 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
 
+  const presenceMap = useMemberPresenceMap(mx, members);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);
-  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu);
+  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu, presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const typingMembers = useRoomTypingMember(room.roomId);
@@ -419,6 +434,7 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
                         member={tagOrMember}
                         onClick={handleMemberClick}
                         pressed={openProfileUserId === tagOrMember.userId}
+                        presence={presenceMap.get(tagOrMember.userId)}
                         typing={typingMembers.some(
                           (receipt) => receipt.userId === tagOrMember.userId
                         )}
