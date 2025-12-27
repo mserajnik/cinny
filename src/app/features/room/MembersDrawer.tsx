@@ -2,6 +2,7 @@ import React, {
   ChangeEventHandler,
   MouseEventHandler,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -26,7 +27,7 @@ import {
   TooltipProvider,
   config,
 } from 'folds';
-import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
+import { MatrixClient, Room, RoomMember, UserEvent } from 'matrix-js-sdk';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import classNames from 'classnames';
 
@@ -208,9 +209,39 @@ export function MembersDrawer({ room, members }: MembersDrawerProps) {
   const sortFilterMenu = useMemberSortMenu();
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
+  const [presenceVersion, setPresenceVersion] = useState(0);
+
+  // Listen to presence changes for all members
+  useEffect(() => {
+    const handlePresenceChange = () => setPresenceVersion((v: number) => v + 1);
+
+    members.forEach((member) => {
+      const user = mx.getUser(member.userId);
+      user?.on(UserEvent.Presence, handlePresenceChange);
+    });
+
+    return () => {
+      members.forEach((member) => {
+        const user = mx.getUser(member.userId);
+        user?.removeListener(UserEvent.Presence, handlePresenceChange);
+      });
+    };
+  }, [members, mx]);
+
+  // Build presence map for sorting
+  const presenceMap = useMemo(() => {
+    const map = new Map();
+    members.forEach((member) => {
+      const user = mx.getUser(member.userId);
+      if (user?.presence) {
+        map.set(member.userId, user.presence);
+      }
+    });
+    return map;
+  }, [members, mx, presenceVersion]);
 
   const membershipFilter = useMembershipFilter(membershipFilterIndex, membershipFilterMenu);
-  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu);
+  const memberSort = useMemberSort(sortFilterIndex, sortFilterMenu, presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const typingMembers = useRoomTypingMember(room.roomId);

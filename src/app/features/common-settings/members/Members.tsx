@@ -2,6 +2,7 @@ import React, {
   ChangeEventHandler,
   MouseEventHandler,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -22,7 +23,7 @@ import {
   toRem,
 } from 'folds';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { RoomMember } from 'matrix-js-sdk';
+import { RoomMember, UserEvent } from 'matrix-js-sdk';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { useRoom } from '../../../hooks/useRoom';
 import { useRoomMembers } from '../../../hooks/useRoomMembers';
@@ -91,8 +92,39 @@ export function Members({ requestClose }: MembersProps) {
 
   const [membershipFilterIndex, setMembershipFilterIndex] = useState(0);
   const [sortFilterIndex, setSortFilterIndex] = useSetting(settingsAtom, 'memberSortFilterIndex');
+  const [presenceVersion, setPresenceVersion] = useState(0);
+
+  // Listen to presence changes for all members
+  useEffect(() => {
+    const handlePresenceChange = () => setPresenceVersion((v: number) => v + 1);
+
+    members.forEach((member) => {
+      const user = mx.getUser(member.userId);
+      user?.on(UserEvent.Presence, handlePresenceChange);
+    });
+
+    return () => {
+      members.forEach((member) => {
+        const user = mx.getUser(member.userId);
+        user?.removeListener(UserEvent.Presence, handlePresenceChange);
+      });
+    };
+  }, [members, mx]);
+
+  // Build presence map for sorting
+  const presenceMap = useMemo(() => {
+    const map = new Map();
+    members.forEach((member) => {
+      const user = mx.getUser(member.userId);
+      if (user?.presence) {
+        map.set(member.userId, user.presence);
+      }
+    });
+    return map;
+  }, [members, mx, presenceVersion]);
+
   const membershipFilter = useMembershipFilter(membershipFilterIndex, useMembershipFilterMenu());
-  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu());
+  const memberSort = useMemberSort(sortFilterIndex, useMemberSortMenu(), presenceMap);
   const memberPowerSort = useMemberPowerSort(creators, getPowerLevel);
 
   const scrollRef = useRef<HTMLDivElement>(null);
