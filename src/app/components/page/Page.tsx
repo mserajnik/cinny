@@ -12,13 +12,13 @@ type PageRootProps = {
 
 export function PageRoot({ nav, children }: PageRootProps) {
   const screenSize = useScreenSizeContext();
+  // Only show the separator line if nav is actually rendered (not null)
+  const showSeparator = screenSize !== ScreenSize.Mobile && nav;
 
   return (
     <Box grow="Yes" className={ContainerColor({ variant: 'Background' })}>
       {nav}
-      {screenSize !== ScreenSize.Mobile && (
-        <Line variant="Background" size="300" direction="Vertical" />
-      )}
+      {showSeparator && <Line variant="Background" size="300" direction="Vertical" />}
       {children}
     </Box>
   );
