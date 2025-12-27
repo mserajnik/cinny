@@ -1,9 +1,13 @@
 import React, { ComponentProps, MutableRefObject, ReactNode } from 'react';
 import { Box, Header, Line, Scroll, Text, as } from 'folds';
 import classNames from 'classnames';
+import { useAtomValue } from 'jotai';
+import { useMatch } from 'react-router-dom';
 import { ContainerColor } from '../../styles/ContainerColor.css';
 import * as css from './style.css';
 import { ScreenSize, useScreenSizeContext } from '../../hooks/useScreenSize';
+import { useCollapsedSidebarSectionsAtom } from '../../state/hooks/collapsedSidebarSections';
+import { DIRECT_PATH, EXPLORE_PATH, HOME_PATH, INBOX_PATH } from '../../pages/paths';
 
 type PageRootProps = {
   nav: ReactNode;
@@ -12,13 +16,28 @@ type PageRootProps = {
 
 export function PageRoot({ nav, children }: PageRootProps) {
   const screenSize = useScreenSizeContext();
+  const collapsedSections = useAtomValue(useCollapsedSidebarSectionsAtom());
+
+  // Determine which section we're in based on current path
+  const homeMatch = useMatch({ path: HOME_PATH, caseSensitive: true, end: false });
+  const directMatch = useMatch({ path: DIRECT_PATH, caseSensitive: true, end: false });
+  const exploreMatch = useMatch({ path: EXPLORE_PATH, caseSensitive: true, end: false });
+  const inboxMatch = useMatch({ path: INBOX_PATH, caseSensitive: true, end: false });
+
+  let isCollapsed = false;
+  if (screenSize !== ScreenSize.Mobile) {
+    if (homeMatch && collapsedSections.has('home')) isCollapsed = true;
+    else if (directMatch && collapsedSections.has('direct')) isCollapsed = true;
+    else if (exploreMatch && collapsedSections.has('explore')) isCollapsed = true;
+    else if (inboxMatch && collapsedSections.has('inbox')) isCollapsed = true;
+  }
+
+  const showSeparator = screenSize !== ScreenSize.Mobile && !isCollapsed;
 
   return (
     <Box grow="Yes" className={ContainerColor({ variant: 'Background' })}>
       {nav}
-      {screenSize !== ScreenSize.Mobile && (
-        <Line variant="Background" size="300" direction="Vertical" />
-      )}
+      {showSeparator && <Line variant="Background" size="300" direction="Vertical" />}
       {children}
     </Box>
   );
