@@ -896,6 +896,17 @@ function Messages() {
   const [urlPreview, setUrlPreview] = useSetting(settingsAtom, 'urlPreview');
   const [encUrlPreview, setEncUrlPreview] = useSetting(settingsAtom, 'encUrlPreview');
   const [showHiddenEvents, setShowHiddenEvents] = useSetting(settingsAtom, 'showHiddenEvents');
+  const [emoteAutocompleteAmount, setEmoteAutocompleteAmount] = useSetting(
+    settingsAtom,
+    'emoteAutocompleteAmount'
+  );
+
+  const handleEmoteAmountChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    const value = parseInt(evt.target.value, 10);
+    if (!isNaN(value) && value >= 1) {
+      setEmoteAutocompleteAmount(value);
+    }
+  };
 
   return (
     <Box direction="Column" gap="100">
@@ -971,6 +982,25 @@ function Messages() {
           title="Show Hidden Events"
           after={
             <Switch variant="Primary" value={showHiddenEvents} onChange={setShowHiddenEvents} />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Emote Autocomplete Amount"
+          after={
+            <Input
+              size="300"
+              variant="Background"
+              value={emoteAutocompleteAmount}
+              onChange={handleEmoteAmountChange}
+              min={1}
+              step={1}
+              type="number"
+              radii="400"
+              style={{ width: toRem(80) }}
+              aria-label="Emote Autocomplete Amount"
+            />
           }
         />
       </SequenceCard>
