@@ -16,6 +16,8 @@ import { mxcUrlToHttp } from '../../../utils/matrix';
 import { useMediaAuthentication } from '../../../hooks/useMediaAuthentication';
 import { ImageUsage, PackImageReader } from '../../../plugins/custom-emoji';
 import { getEmoticonSearchStr } from '../../../plugins/utils';
+import { useSetting } from '../../../state/hooks/settings';
+import { settingsAtom } from '../../../state/settings';
 
 type EmoticonCompleteHandler = (key: string, shortcode: string) => void;
 
@@ -42,6 +44,7 @@ export function EmoticonAutocomplete({
 }: EmoticonAutocompleteProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
+  const [emoteAutocompleteAmount] = useSetting(settingsAtom, 'emoteAutocompleteAmount');
 
   const imagePacks = useRelevantImagePacks(ImageUsage.Emoticon, imagePackRooms);
 
@@ -57,7 +60,9 @@ export function EmoticonAutocomplete({
     getEmoticonSearchStr,
     SEARCH_OPTIONS
   );
-  const autoCompleteEmoticon = result ? result.items.slice(0, 250) : searchList.slice(0, 250);
+  const autoCompleteEmoticon = result
+    ? result.items.slice(0, emoteAutocompleteAmount)
+    : searchList.slice(0, emoteAutocompleteAmount);
 
   useEffect(() => {
     if (query.text) search(query.text);
