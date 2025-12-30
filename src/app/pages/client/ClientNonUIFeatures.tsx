@@ -20,12 +20,14 @@ import {
   getNotificationType,
   getUnreadInfo,
   isNotificationEvent,
+  trimReplyFromBody,
 } from '../../utils/room';
 import { NotificationType, UnreadInfo } from '../../../types/matrix/room';
 import { getMxIdLocalPart, mxcUrlToHttp } from '../../utils/matrix';
 import { useSelectedRoom } from '../../hooks/router/useSelectedRoom';
 import { useInboxNotificationsSelected } from '../../hooks/router/useInbox';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { MsgType } from 'matrix-js-sdk';
 
 function SystemEmojiFeature() {
   const [twitterEmoji] = useSetting(settingsAtom, 'twitterEmoji');
@@ -146,17 +148,19 @@ function MessageNotifications() {
       roomName,
       roomAvatar,
       username,
+      messageBody,
     }: {
       roomName: string;
       roomAvatar?: string;
       username: string;
       roomId: string;
       eventId: string;
+      messageBody: string;
     }) => {
       const noti = new window.Notification(roomName, {
         icon: roomAvatar,
         badge: roomAvatar,
-        body: `New inbox notification from ${username}`,
+        body: `${username}: ${messageBody}`,
         silent: true,
       });
 
@@ -215,6 +219,49 @@ function MessageNotifications() {
       if (showNotifications && notificationPermission('granted')) {
         const avatarMxc =
           room.getAvatarFallbackMember()?.getMxcAvatarUrl() ?? room.getMxcAvatarUrl();
+
+        // Extract message body for notification
+        let messageBody = 'New message';
+        const eventType = mEvent.getType();
+
+        // For encrypted messages, check if already decrypted
+        if (eventType === 'm.room.encrypted') {
+          messageBody = '🔒 Encrypted message';
+        } else if (eventType === 'm.sticker') {
+          messageBody = 'Sticker';
+        } else if (eventType === 'm.room.message') {
+          const content = mEvent.getContent();
+          const msgtype = content.msgtype;
+
+          switch (msgtype) {
+            case MsgType.Text:
+            case MsgType.Notice:
+            case MsgType.Emote: {
+              const body = content.body;
+              if (typeof body === 'string') {
+                const trimmedBody = trimReplyFromBody(body);
+                // Truncate if too long (notifications should be concise)
+                messageBody = trimmedBody.length > 100
+                  ? `${trimmedBody.substring(0, 100)}...`
+                  : trimmedBody;
+              }
+              break;
+            }
+            case MsgType.Image:
+              messageBody = '🖼️ Image';
+              break;
+            case MsgType.Video:
+              messageBody = '🎥 Video';
+              break;
+            case MsgType.Audio:
+              messageBody = '🎵 Audio';
+              break;
+            case MsgType.File:
+              messageBody = '📎 File';
+              break;
+          }
+        }
+
         notify({
           roomName: room.name ?? 'Unknown',
           roomAvatar: avatarMxc
@@ -223,6 +270,7 @@ function MessageNotifications() {
           username: getMemberDisplayName(room, sender) ?? getMxIdLocalPart(sender) ?? sender,
           roomId: room.roomId,
           eventId,
+          messageBody,
         });
       }
 
