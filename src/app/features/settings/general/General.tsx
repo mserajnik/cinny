@@ -900,6 +900,10 @@ function Messages() {
     settingsAtom,
     'emoteAutocompleteAmount'
   );
+  const [notificationBodyPreview, setNotificationBodyPreview] = useSetting(
+    settingsAtom,
+    'notificationBodyPreview'
+  );
 
   const handleEmoteAmountChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const value = parseInt(evt.target.value, 10);
@@ -1000,6 +1004,19 @@ function Messages() {
               radii="400"
               style={{ width: toRem(80) }}
               aria-label="Emote Autocomplete Amount"
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Notification Message Preview"
+          description="Show actual message content in desktop notifications instead of generic text."
+          after={
+            <Switch
+              variant="Primary"
+              value={notificationBodyPreview}
+              onChange={setNotificationBodyPreview}
             />
           }
         />
