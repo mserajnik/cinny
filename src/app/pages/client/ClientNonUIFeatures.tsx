@@ -1,7 +1,7 @@
 import { useAtomValue } from 'jotai';
 import React, { ReactNode, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RoomEvent, RoomEventHandlerMap } from 'matrix-js-sdk';
+import { MatrixEventEvent, MatrixEventHandlerMap, RoomEvent, RoomEventHandlerMap } from 'matrix-js-sdk';
 import { roomToUnreadAtom, unreadEqual, unreadInfoToUnread } from '../../state/room/roomToUnread';
 import LogoSVG from '../../../../public/res/svg/cinny.svg';
 import LogoUnreadSVG from '../../../../public/res/svg/cinny-unread.svg';
@@ -26,6 +26,7 @@ import { getMxIdLocalPart, mxcUrlToHttp } from '../../utils/matrix';
 import { useSelectedRoom } from '../../hooks/router/useSelectedRoom';
 import { useInboxNotificationsSelected } from '../../hooks/router/useInbox';
 import { useMediaAuthentication } from '../../hooks/useMediaAuthentication';
+import { getNotificationBody } from '../../utils/notification';
 
 function SystemEmojiFeature() {
   const [twitterEmoji] = useSetting(settingsAtom, 'twitterEmoji');
@@ -146,17 +147,19 @@ function MessageNotifications() {
       roomName,
       roomAvatar,
       username,
+      messageBody,
     }: {
       roomName: string;
       roomAvatar?: string;
       username: string;
+      messageBody: string;
       roomId: string;
       eventId: string;
     }) => {
       const noti = new window.Notification(roomName, {
         icon: roomAvatar,
         badge: roomAvatar,
-        body: `New inbox notification from ${username}`,
+        body: `${username}: ${messageBody}`,
         silent: true,
       });
 
@@ -212,22 +215,50 @@ function MessageNotifications() {
         return;
       }
 
-      if (showNotifications && notificationPermission('granted')) {
-        const avatarMxc =
-          room.getAvatarFallbackMember()?.getMxcAvatarUrl() ?? room.getMxcAvatarUrl();
-        notify({
-          roomName: room.name ?? 'Unknown',
-          roomAvatar: avatarMxc
-            ? mxcUrlToHttp(mx, avatarMxc, useAuthentication, 96, 96, 'crop') ?? undefined
-            : undefined,
-          username: getMemberDisplayName(room, sender) ?? getMxIdLocalPart(sender) ?? sender,
-          roomId: room.roomId,
-          eventId,
-        });
-      }
+      // Helper function to send the notification
+      const sendNotification = () => {
+        const messageBody = getNotificationBody(mEvent);
 
-      if (notificationSound) {
-        playSound();
+        // If we couldn't get a notification body (e.g., unsupported type or still encrypted), skip
+        if (!messageBody) return;
+
+        if (showNotifications && notificationPermission('granted')) {
+          const avatarMxc =
+            room.getAvatarFallbackMember()?.getMxcAvatarUrl() ?? room.getMxcAvatarUrl();
+          notify({
+            roomName: room.name ?? 'Unknown',
+            roomAvatar: avatarMxc
+              ? mxcUrlToHttp(mx, avatarMxc, useAuthentication, 96, 96, 'crop') ?? undefined
+              : undefined,
+            username: getMemberDisplayName(room, sender) ?? getMxIdLocalPart(sender) ?? sender,
+            messageBody,
+            roomId: room.roomId,
+            eventId,
+          });
+        }
+
+        if (notificationSound) {
+          playSound();
+        }
+      };
+
+      // If the message is encrypted, wait for it to be decrypted before sending notification
+      if (mEvent.isEncrypted()) {
+        // If already decrypted, send immediately
+        if (mEvent.isDecryptionFailure() === false && getNotificationBody(mEvent) !== null) {
+          sendNotification();
+        } else {
+          // Wait for decryption
+          const handleDecrypted: MatrixEventHandlerMap[MatrixEventEvent.Decrypted] = () => {
+            sendNotification();
+            // Clean up the listener after notification is sent
+            mEvent.removeListener(MatrixEventEvent.Decrypted, handleDecrypted);
+          };
+          mEvent.on(MatrixEventEvent.Decrypted, handleDecrypted);
+        }
+      } else {
+        // For non-encrypted messages, send immediately
+        sendNotification();
       }
     };
     mx.on(RoomEvent.Timeline, handleTimelineEvent);
