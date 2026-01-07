@@ -25,17 +25,72 @@ if ('serviceWorker' in navigator) {
       ? `${trimTrailingSlash(import.meta.env.BASE_URL)}/sw.js`
       : `/dev-sw.js?dev-sw`;
 
-  navigator.serviceWorker.register(swUrl);
+  // Set up message listener BEFORE registering service worker
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'token' && event.data?.responseKey) {
       // Get the token for SW.
       const token = localStorage.getItem('cinny_access_token') ?? undefined;
-      event.source!.postMessage({
-        responseKey: event.data.responseKey,
-        token,
-      });
+      console.log('[Cinny] Responding to SW token request:', event.data.responseKey, 'has token:', !!token);
+
+      // event.source might be null, so we need to respond via the service worker controller
+      const target = event.source || navigator.serviceWorker.controller;
+      if (target) {
+        target.postMessage({
+          responseKey: event.data.responseKey,
+          token,
+        });
+      } else {
+        console.error('[Cinny] Cannot respond to SW token request: no message target available');
+      }
+    } else if (event.data?.type === 'token-fetch-failed') {
+      console.error('[Cinny] Service Worker failed to get token for:', event.data.url);
+      console.error('[Cinny] This will cause M_MISSING_TOKEN errors');
     }
   });
+
+  // Function to send token updates to service worker
+  const updateServiceWorkerToken = () => {
+    const token = localStorage.getItem('cinny_access_token');
+    if (token && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'token-update',
+        token,
+      });
+      console.log('[Cinny] Sent token update to service worker');
+    }
+  };
+
+  navigator.serviceWorker.register(swUrl).then((registration) => {
+    console.log('[Cinny] Service Worker registered successfully');
+
+    // Send initial token when SW is ready
+    if (navigator.serviceWorker.controller) {
+      updateServiceWorkerToken();
+    }
+
+    // Send token when SW becomes active
+    registration.addEventListener('updatefound', () => {
+      const newWorker = registration.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'activated') {
+            updateServiceWorkerToken();
+          }
+        });
+      }
+    });
+  }).catch((error) => {
+    console.error('[Cinny] Service Worker registration failed:', error);
+  });
+
+  // Also send token update when SW controller changes (new SW takes over)
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    console.log('[Cinny] Service Worker controller changed');
+    updateServiceWorkerToken();
+  });
+
+  // Periodically refresh the token in the service worker cache
+  setInterval(updateServiceWorkerToken, 30000); // Every 30 seconds
 }
 
 const mountApp = () => {
