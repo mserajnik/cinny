@@ -25,16 +25,27 @@ if ('serviceWorker' in navigator) {
       ? `${trimTrailingSlash(import.meta.env.BASE_URL)}/sw.js`
       : `/dev-sw.js?dev-sw`;
 
-  navigator.serviceWorker.register(swUrl);
+  // Set up message listener BEFORE registering service worker
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data?.type === 'token' && event.data?.responseKey) {
       // Get the token for SW.
       const token = localStorage.getItem('cinny_access_token') ?? undefined;
-      event.source!.postMessage({
-        responseKey: event.data.responseKey,
-        token,
-      });
+
+      // event.source might be null, so we need to respond via the service worker controller
+      const target = event.source || navigator.serviceWorker.controller;
+      if (target) {
+        target.postMessage({
+          responseKey: event.data.responseKey,
+          token,
+        });
+      } else {
+        console.warn('[Cinny] Cannot respond to SW token request: no message target available');
+      }
     }
+  });
+
+  navigator.serviceWorker.register(swUrl).catch((error) => {
+    console.error('[Cinny] Service Worker registration failed:', error);
   });
 }
 
