@@ -3,15 +3,26 @@
 export type {};
 declare const self: ServiceWorkerGlobalScope;
 
+// Store pending token requests
+const pendingRequests = new Map<string, (token: string | undefined) => void>();
+
+// Single message listener to handle all token responses
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  const { responseKey, token } = event.data || {};
+
+  if (responseKey && pendingRequests.has(responseKey)) {
+    const resolve = pendingRequests.get(responseKey);
+    pendingRequests.delete(responseKey);
+    if (resolve) {
+      resolve(token);
+    }
+  }
+});
+
 async function askForAccessToken(client: Client): Promise<string | undefined> {
   return new Promise((resolve) => {
     const responseKey = Math.random().toString(36);
-    const listener = (event: ExtendableMessageEvent) => {
-      if (event.data.responseKey !== responseKey) return;
-      resolve(event.data.token);
-      self.removeEventListener('message', listener);
-    };
-    self.addEventListener('message', listener);
+    pendingRequests.set(responseKey, resolve);
     client.postMessage({ responseKey, type: 'token' });
   });
 }
@@ -28,7 +39,7 @@ function fetchConfig(token?: string): RequestInit | undefined {
 }
 
 self.addEventListener('activate', (event: ExtendableEvent) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', (event: FetchEvent) => {
