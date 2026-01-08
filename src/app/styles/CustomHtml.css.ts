@@ -201,8 +201,8 @@ export const EmoticonBase = style([
   {
     display: 'inline-block',
     padding: '0.05rem',
-    height: '1em',
-    verticalAlign: 'middle',
+    height: 'auto',
+    verticalAlign: 'baseline',
   },
 ]);
 
@@ -214,13 +214,11 @@ export const Emoticon = recipe({
       justifyContent: 'center',
       alignItems: 'center',
 
-      height: '1em',
+      height: 'auto',
       minWidth: '1em',
       fontSize: '1.33em',
       lineHeight: '1em',
-      verticalAlign: 'middle',
-      position: 'relative',
-      top: '-0.35em',
+      verticalAlign: 'baseline',
       borderRadius: config.radii.R300,
     },
   ],
@@ -236,7 +234,8 @@ export const Emoticon = recipe({
 export const EmoticonImg = style([
   DefaultReset,
   {
-    height: '1em',
+    height: 'var(--emoticon-size, 1em)',
+    width: 'auto',
     cursor: 'default',
   },
 ]);
