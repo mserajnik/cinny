@@ -904,12 +904,51 @@ function Messages() {
     settingsAtom,
     'notificationBodyPreview'
   );
+  const [emoteSize, setEmoteSize] = useSetting(settingsAtom, 'emoteSize');
+  const [standaloneEmoteSize, setStandaloneEmoteSize] = useSetting(
+    settingsAtom,
+    'standaloneEmoteSize'
+  );
+
+  const [emoteSizeInput, setEmoteSizeInput] = useState(emoteSize);
+  const [standaloneEmoteSizeInput, setStandaloneEmoteSizeInput] = useState(standaloneEmoteSize);
 
   const handleEmoteAmountChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const value = parseInt(evt.target.value, 10);
     if (!isNaN(value) && value >= 1) {
       setEmoteAutocompleteAmount(value);
     }
+  };
+
+  const validateCssSize = (value: string): boolean => {
+    // Match valid CSS size units: em, px, rem, %, pt, cm, mm, in, pc, ex, ch, vw, vh, vmin, vmax
+    return /^(\d+\.?\d*|\.\d+)(em|px|rem|%|pt|cm|mm|in|pc|ex|ch|vw|vh|vmin|vmax)$/i.test(value);
+  };
+
+  const handleEmoteSizeChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    setEmoteSizeInput(evt.target.value);
+  };
+
+  const handleEmoteSizeBlur = () => {
+    const value = emoteSizeInput.trim();
+    if (!value || !validateCssSize(value)) {
+      setEmoteSizeInput(emoteSize);
+      return;
+    }
+    setEmoteSize(value);
+  };
+
+  const handleStandaloneEmoteSizeChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    setStandaloneEmoteSizeInput(evt.target.value);
+  };
+
+  const handleStandaloneEmoteSizeBlur = () => {
+    const value = standaloneEmoteSizeInput.trim();
+    if (!value || !validateCssSize(value)) {
+      setStandaloneEmoteSizeInput(standaloneEmoteSize);
+      return;
+    }
+    setStandaloneEmoteSize(value);
   };
 
   return (
@@ -1017,6 +1056,44 @@ function Messages() {
               variant="Primary"
               value={notificationBodyPreview}
               onChange={setNotificationBodyPreview}
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Emote Size"
+          description="Size of custom emotes in messages (e.g., 1em, 1.5em, 2em)."
+          after={
+            <Input
+              size="300"
+              variant="Background"
+              value={emoteSizeInput}
+              onChange={handleEmoteSizeChange}
+              onBlur={handleEmoteSizeBlur}
+              type="text"
+              radii="400"
+              style={{ width: toRem(80) }}
+              aria-label="Emote Size"
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Standalone Emote Size"
+          description="Size for messages containing only emotes (e.g., 1em, 1.5em, 2em)."
+          after={
+            <Input
+              size="300"
+              variant="Background"
+              value={standaloneEmoteSizeInput}
+              onChange={handleStandaloneEmoteSizeChange}
+              onBlur={handleStandaloneEmoteSizeBlur}
+              type="text"
+              radii="400"
+              style={{ width: toRem(80) }}
+              aria-label="Standalone Emote Size"
             />
           }
         />
