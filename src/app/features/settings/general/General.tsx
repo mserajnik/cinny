@@ -904,11 +904,30 @@ function Messages() {
     settingsAtom,
     'notificationBodyPreview'
   );
+  const [emoteSize, setEmoteSize] = useSetting(settingsAtom, 'emoteSize');
+  const [standaloneEmoteSize, setStandaloneEmoteSize] = useSetting(
+    settingsAtom,
+    'standaloneEmoteSize'
+  );
 
   const handleEmoteAmountChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const value = parseInt(evt.target.value, 10);
     if (!isNaN(value) && value >= 1) {
       setEmoteAutocompleteAmount(value);
+    }
+  };
+
+  const handleEmoteSizeChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    const value = evt.target.value.trim();
+    if (value) {
+      setEmoteSize(value);
+    }
+  };
+
+  const handleStandaloneEmoteSizeChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
+    const value = evt.target.value.trim();
+    if (value) {
+      setStandaloneEmoteSize(value);
     }
   };
 
@@ -1017,6 +1036,42 @@ function Messages() {
               variant="Primary"
               value={notificationBodyPreview}
               onChange={setNotificationBodyPreview}
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Emote Size"
+          description="Size of custom emotes in messages (e.g., 1em, 1.5em, 2em)."
+          after={
+            <Input
+              size="300"
+              variant="Background"
+              value={emoteSize}
+              onChange={handleEmoteSizeChange}
+              type="text"
+              radii="400"
+              style={{ width: toRem(80) }}
+              aria-label="Emote Size"
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Standalone Emote Size"
+          description="Size for messages containing only emotes (e.g., 1em, 1.5em, 2em)."
+          after={
+            <Input
+              size="300"
+              variant="Background"
+              value={standaloneEmoteSize}
+              onChange={handleStandaloneEmoteSizeChange}
+              type="text"
+              radii="400"
+              style={{ width: toRem(80) }}
+              aria-label="Standalone Emote Size"
             />
           }
         />

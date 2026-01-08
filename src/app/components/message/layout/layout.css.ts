@@ -193,6 +193,9 @@ export const MessageTextBody = recipe({
       true: {
         fontSize: '1.504em',
         lineHeight: '1.4962em',
+        vars: {
+          '--emoticon-size': 'var(--standalone-emoticon-size, 1em)',
+        },
       },
     },
     emote: {
