@@ -35,6 +35,7 @@ import { validBlurHash } from '../../../utils/blurHash';
 type RenderViewerProps = {
   src: string;
   alt: string;
+  accessToken?: string;
   requestClose: () => void;
 };
 type RenderImageProps = {
@@ -88,9 +89,10 @@ export const ImageContent = as<'div', ImageContentProps>(
     const [srcState, loadSrc] = useAsyncCallback(
       useCallback(async () => {
         const mediaUrl = mxcUrlToHttp(mx, url, useAuthentication) ?? url;
+        const accessToken = mx.getAccessToken() ?? undefined;
         if (encInfo) {
           const fileContent = await downloadEncryptedMedia(mediaUrl, (encBuf) =>
-            decryptFile(encBuf, mimeType ?? FALLBACK_MIMETYPE, encInfo)
+            decryptFile(encBuf, mimeType ?? FALLBACK_MIMETYPE, encInfo), accessToken
           );
           return URL.createObjectURL(fileContent);
         }
@@ -136,6 +138,7 @@ export const ImageContent = as<'div', ImageContentProps>(
                   {renderViewer({
                     src: srcState.data,
                     alt: body,
+                    accessToken: mx.getAccessToken() ?? undefined,
                     requestClose: () => setViewer(false),
                   })}
                 </Modal>

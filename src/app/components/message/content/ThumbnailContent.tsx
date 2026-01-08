@@ -24,9 +24,10 @@ export function ThumbnailContent({ info, renderImage }: ThumbnailContentProps) {
       }
 
       const mediaUrl = mxcUrlToHttp(mx, thumbMxcUrl, useAuthentication) ?? thumbMxcUrl;
+      const accessToken = mx.getAccessToken() ?? undefined;
       if (encInfo) {
         const fileContent = await downloadEncryptedMedia(mediaUrl, (encBuf) =>
-          decryptFile(encBuf, thumbInfo.mimetype ?? FALLBACK_MIMETYPE, encInfo)
+          decryptFile(encBuf, thumbInfo.mimetype ?? FALLBACK_MIMETYPE, encInfo), accessToken
         );
         return URL.createObjectURL(fileContent);
       }

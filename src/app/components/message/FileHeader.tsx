@@ -28,9 +28,10 @@ export function FileDownloadButton({ filename, url, mimeType, encInfo }: FileDow
   const [downloadState, download] = useAsyncCallback(
     useCallback(async () => {
       const mediaUrl = mxcUrlToHttp(mx, url, useAuthentication) ?? url;
+      const accessToken = mx.getAccessToken() ?? undefined;
       const fileContent = encInfo
-        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo))
-        : await downloadMedia(mediaUrl);
+        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo), accessToken)
+        : await downloadMedia(mediaUrl, accessToken);
 
       const fileURL = URL.createObjectURL(fileContent);
       FileSaver.saveAs(fileURL, filename);

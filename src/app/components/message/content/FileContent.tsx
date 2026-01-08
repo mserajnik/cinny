@@ -87,9 +87,10 @@ export function ReadTextFile({ body, mimeType, url, encInfo, renderViewer }: Rea
   const [textState, loadText] = useAsyncCallback(
     useCallback(async () => {
       const mediaUrl = mxcUrlToHttp(mx, url, useAuthentication) ?? url;
+      const accessToken = mx.getAccessToken() ?? undefined;
       const fileContent = encInfo
-        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo))
-        : await downloadMedia(mediaUrl);
+        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo), accessToken)
+        : await downloadMedia(mediaUrl, accessToken);
 
       const text = fileContent.text();
       setTextViewer(true);
@@ -177,9 +178,10 @@ export function ReadPdfFile({ body, mimeType, url, encInfo, renderViewer }: Read
   const [pdfState, loadPdf] = useAsyncCallback(
     useCallback(async () => {
       const mediaUrl = mxcUrlToHttp(mx, url, useAuthentication) ?? url;
+      const accessToken = mx.getAccessToken() ?? undefined;
       const fileContent = encInfo
-        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo))
-        : await downloadMedia(mediaUrl);
+        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo), accessToken)
+        : await downloadMedia(mediaUrl, accessToken);
       setPdfViewer(true);
       return URL.createObjectURL(fileContent);
     }, [mx, url, useAuthentication, mimeType, encInfo])
@@ -254,9 +256,10 @@ export function DownloadFile({ body, mimeType, url, info, encInfo }: DownloadFil
   const [downloadState, download] = useAsyncCallback(
     useCallback(async () => {
       const mediaUrl = mxcUrlToHttp(mx, url, useAuthentication) ?? url;
+      const accessToken = mx.getAccessToken() ?? undefined;
       const fileContent = encInfo
-        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo))
-        : await downloadMedia(mediaUrl);
+        ? await downloadEncryptedMedia(mediaUrl, (encBuf) => decryptFile(encBuf, mimeType, encInfo), accessToken)
+        : await downloadMedia(mediaUrl, accessToken);
 
       const fileURL = URL.createObjectURL(fileContent);
       FileSaver.saveAs(fileURL, body);
