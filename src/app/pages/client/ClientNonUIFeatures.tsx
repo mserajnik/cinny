@@ -52,6 +52,22 @@ function PageZoomFeature() {
   return null;
 }
 
+function EmoteSizeFeature() {
+  const [emoteSize] = useSetting(settingsAtom, 'emoteSize');
+
+  document.documentElement.style.setProperty('--emoticon-size', emoteSize);
+
+  return null;
+}
+
+function StandaloneEmoteSizeFeature() {
+  const [standaloneEmoteSize] = useSetting(settingsAtom, 'standaloneEmoteSize');
+
+  document.documentElement.style.setProperty('--standalone-emoticon-size', standaloneEmoteSize);
+
+  return null;
+}
+
 function FaviconUpdater() {
   const roomToUnread = useAtomValue(roomToUnreadAtom);
 
@@ -294,6 +310,8 @@ export function ClientNonUIFeatures({ children }: ClientNonUIFeaturesProps) {
     <>
       <SystemEmojiFeature />
       <PageZoomFeature />
+      <EmoteSizeFeature />
+      <StandaloneEmoteSizeFeature />
       <FaviconUpdater />
       <InviteNotifications />
       <MessageNotifications />
