@@ -43,14 +43,17 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
 
   if (type !== 'setSession') return;
 
-  cleanupDeadClients();
-
-  if (typeof accessToken === 'string' && typeof baseUrl === 'string') {
-    sessions.set(client.id, { accessToken, baseUrl });
-  } else {
-    // Logout or invalid session
-    sessions.delete(client.id);
-  }
+  // Use waitUntil to ensure cleanup completes before session update
+  event.waitUntil(
+    cleanupDeadClients().then(() => {
+      if (typeof accessToken === 'string' && typeof baseUrl === 'string') {
+        sessions.set(client.id, { accessToken, baseUrl });
+      } else {
+        // Logout or invalid session
+        sessions.delete(client.id);
+      }
+    })
+  );
 });
 
 function validMediaRequest(url: string, baseUrl: string): boolean {
