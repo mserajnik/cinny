@@ -3,10 +3,6 @@
 export type {};
 declare const self: ServiceWorkerGlobalScope;
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
 self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(self.clients.claim());
 });
@@ -43,13 +39,13 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
 
   if (type !== 'setSession') return;
 
-  cleanupDeadClients();
-
   if (typeof accessToken === 'string' && typeof baseUrl === 'string') {
     sessions.set(client.id, { accessToken, baseUrl });
   } else {
     // Logout or invalid session
     sessions.delete(client.id);
+    // Clean up dead clients to keep map tidy
+    event.waitUntil(cleanupDeadClients());
   }
 });
 
@@ -80,5 +76,11 @@ self.addEventListener('fetch', (event: FetchEvent) => {
 
   if (!validMediaRequest(url, session.baseUrl)) return;
 
-  event.respondWith(fetch(url, fetchConfig(session.accessToken)));
+  event.respondWith(
+    fetch(url, fetchConfig(session.accessToken)).catch((error) => {
+      // Fallback to unauthenticated fetch if authenticated request fails
+      console.warn('Authenticated fetch failed, falling back to unauthenticated:', error);
+      return fetch(url);
+    })
+  );
 });
