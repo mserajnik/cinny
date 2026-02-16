@@ -3,10 +3,6 @@
 export type {};
 declare const self: ServiceWorkerGlobalScope;
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
-});
-
 self.addEventListener('activate', (event: ExtendableEvent) => {
   event.waitUntil(self.clients.claim());
 });
@@ -43,13 +39,13 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
 
   if (type !== 'setSession') return;
 
-  cleanupDeadClients();
-
   if (typeof accessToken === 'string' && typeof baseUrl === 'string') {
+    // Setting a new session - no cleanup needed
     sessions.set(client.id, { accessToken, baseUrl });
   } else {
-    // Logout or invalid session
+    // Logout or invalid session - cleanup dead clients to keep map tidy
     sessions.delete(client.id);
+    event.waitUntil(cleanupDeadClients());
   }
 });
 
