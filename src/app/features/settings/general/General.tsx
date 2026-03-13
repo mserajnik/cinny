@@ -31,6 +31,7 @@ import { isKeyHotkey } from 'is-hotkey';
 import FocusTrap from 'focus-trap-react';
 import { Page, PageContent, PageHeader } from '../../../components/page';
 import { SequenceCard } from '../../../components/sequence-card';
+import { useMatrixClient } from '../../../hooks/useMatrixClient';
 import { useSetting } from '../../../state/hooks/settings';
 import { DateFormat, MessageLayout, MessageSpacing, settingsAtom } from '../../../state/settings';
 import { SettingTile } from '../../../components/setting-tile';
@@ -50,6 +51,7 @@ import { useMessageLayoutItems } from '../../../hooks/useMessageLayout';
 import { useMessageSpacingItems } from '../../../hooks/useMessageSpacing';
 import { useDateFormatItems } from '../../../hooks/useDateFormat';
 import { SequenceCardStyle } from '../styles.css';
+import { clearEmoteUsageStore, getEmoteUsageStore } from '../../../utils/emoteAutocompleteUsage';
 
 type ThemeSelectorProps = {
   themeNames: Record<string, string>;
@@ -880,6 +882,7 @@ function SelectMessageSpacing() {
 }
 
 function Messages() {
+  const mx = useMatrixClient();
   const [legacyUsernameColor, setLegacyUsernameColor] = useSetting(
     settingsAtom,
     'legacyUsernameColor'
@@ -900,6 +903,10 @@ function Messages() {
     settingsAtom,
     'emoteAutocompleteAmount'
   );
+  const [emoteAutocompleteSortByUsage, setEmoteAutocompleteSortByUsage] = useSetting(
+    settingsAtom,
+    'emoteAutocompleteSortByUsage'
+  );
   const [emoteSize, setEmoteSize] = useSetting(settingsAtom, 'emoteSize');
   const [standaloneEmoteSize, setStandaloneEmoteSize] = useSetting(
     settingsAtom,
@@ -912,6 +919,12 @@ function Messages() {
 
   const [emoteSizeInput, setEmoteSizeInput] = useState(emoteSize);
   const [standaloneEmoteSizeInput, setStandaloneEmoteSizeInput] = useState(standaloneEmoteSize);
+  const userId = mx.getSafeUserId();
+  const [emoteUsageCount, setEmoteUsageCount] = useState(0);
+
+  useEffect(() => {
+    setEmoteUsageCount(Object.keys(getEmoteUsageStore(userId)).length);
+  }, [userId, emoteAutocompleteSortByUsage]);
 
   const handleEmoteAmountChange: ChangeEventHandler<HTMLInputElement> = (evt) => {
     const value = parseInt(evt.target.value, 10);
@@ -949,6 +962,11 @@ function Messages() {
       return;
     }
     setStandaloneEmoteSize(value);
+  };
+
+  const handleResetEmoteAutocompleteUsage = () => {
+    clearEmoteUsageStore(userId);
+    setEmoteUsageCount(0);
   };
 
   return (
@@ -1044,6 +1062,38 @@ function Messages() {
               style={{ width: toRem(80) }}
               aria-label="Emote Autocomplete Amount"
             />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Sort Autocomplete Suggestions by Usage"
+          description="Prioritize emotes you use more often in autocomplete."
+          after={
+            <Switch
+              variant="Primary"
+              value={emoteAutocompleteSortByUsage}
+              onChange={setEmoteAutocompleteSortByUsage}
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Reset Autocomplete Usage"
+          description="Clears stored emote usage data for autocomplete suggestions."
+          after={
+            <Button
+              size="300"
+              variant="Secondary"
+              outlined
+              fill="Soft"
+              radii="300"
+              onClick={handleResetEmoteAutocompleteUsage}
+              disabled={!emoteAutocompleteSortByUsage || emoteUsageCount === 0}
+            >
+              <Text size="T300">Reset</Text>
+            </Button>
           }
         />
       </SequenceCard>
