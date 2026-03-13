@@ -900,6 +900,10 @@ function Messages() {
     settingsAtom,
     'emoteAutocompleteAmount'
   );
+  const [emoteAutocompleteSortByUsage, setEmoteAutocompleteSortByUsage] = useSetting(
+    settingsAtom,
+    'emoteAutocompleteSortByUsage'
+  );
   const [emoteSize, setEmoteSize] = useSetting(settingsAtom, 'emoteSize');
   const [standaloneEmoteSize, setStandaloneEmoteSize] = useSetting(
     settingsAtom,
@@ -1043,6 +1047,19 @@ function Messages() {
               radii="400"
               style={{ width: toRem(80) }}
               aria-label="Emote Autocomplete Amount"
+            />
+          }
+        />
+      </SequenceCard>
+      <SequenceCard className={SequenceCardStyle} variant="SurfaceVariant" direction="Column">
+        <SettingTile
+          title="Sort Autocomplete Suggestions by Usage"
+          description="Prioritize emotes you use more often in autocomplete."
+          after={
+            <Switch
+              variant="Primary"
+              value={emoteAutocompleteSortByUsage}
+              onChange={setEmoteAutocompleteSortByUsage}
             />
           }
         />
