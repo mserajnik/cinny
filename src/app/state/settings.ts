@@ -34,6 +34,7 @@ export interface Settings {
   showHiddenEvents: boolean;
   legacyUsernameColor: boolean;
   emoteAutocompleteAmount: number;
+  emoteAutocompleteSortByUsage: boolean;
   emoteSize: string;
   standaloneEmoteSize: string;
 
@@ -72,6 +73,7 @@ const defaultSettings: Settings = {
   showHiddenEvents: false,
   legacyUsernameColor: false,
   emoteAutocompleteAmount: 25,
+  emoteAutocompleteSortByUsage: false,
   emoteSize: '1em',
   standaloneEmoteSize: '1em',
 
